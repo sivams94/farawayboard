@@ -1,0 +1,291 @@
+{% extends 'main.html' %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="row align-items-start justify-content-around">
+  <div class="col-md-3 my-3 p-4 bg-white rounded box-shadow text-center">
+    <div class="name-tag bg-warning">
+      <div class="font-weight-bold text-white">{{ name }}</div>
+    </div>
+    <p class="font-weight-bold loggedin-name">Hi, {{ request.user.full_name }}</p>
+    <p>
+      <span class="d-block">Last sign-in</span>
+      <span class="text-primary">{{ request.user.last_login }}</span>
+    </p>
+    <form class="form-inline my-2 my-lg-0" method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button class="btn btn-dark btn-block my-2 my-sm-0" type="submit">Log Out</button>
+    </form>
+  </div>
+  <div class="col-md-8">
+    <div class="row my-3 p-3 bg-white rounded box-shadow">
+      <div class="col-md-12">
+        {% for message in messages %}
+          <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            {{ message | safe }}
+          </div>
+        {% endfor %}
+        <div id="alertContainer"></div>
+        <form id="booking-form" method="post" action="{% url 'booking' %}" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="device_id" value="1">
+          <h4 class="pb-2 mb-4 underlined-header">Book Now</h4>
+          <div class="form-group row">
+            <label for="inputPassword" class="col-sm-3 col-form-label">Date</label>
+            <div class="col-sm-9">              
+              <div class="datepicker date input-group">
+                <input type="text" name="date" class="form-control" placeholder="Choose Date" required autocomplete="off">
+                <div class="input-group-append">
+                  <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Start Time</label>
+            <div class="col-sm-9">
+              <input type="text" name="start_time" class="form-control" id="timePicker" required>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Duration</label>
+            <div class="col-sm-9">
+              <div class="row">
+                <div class="col-md-3">
+                  <button class="btn btn-primary" type="button" id="decreaseHour">-</button>
+                </div>
+                <div class="col-md-6 text-center p-2">
+                  <input type="hidden" name="duration" class="form-control" id="hourInput" value="01:00">
+                  <div class="font-weight-bold">
+                    <span id="hourNumber">1</span> Hr
+                    <span id="minsNumber" style="display: none"><span></span> Mins</span> 
+                  </div>
+                </div>
+                <div class="col-md-3 text-right">
+                  <button class="btn btn-primary" type="button" id="increaseHour">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group row mt-4">
+            <label class="col-sm-3 col-form-label"></label>
+            <div class="col-sm-9">
+              <button class="btn btn-primary btn-block" type="submit">Submit</button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+    
+    <div class="row my-3 p-3 bg-white rounded box-shadow">
+      <div class="col-md-12">
+        <h4 class="pb-2 mb-4">My Bookings</h4>
+        <table id="example" class="table table-sm table-bordered nowrap">
+          <thead>
+            <tr>
+                <th>Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Duration</th>                
+                <th>Action</th>
+                <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in bookings %}
+              <tr>
+                <td>{{ item.start_date|date:'d M Y' }}</td>
+                <td>{{ item.start_date|date:'h:i a' }}</td>
+                <td>{{ item.end_date|date:'h:i a' }}</td>
+                <td>{{ item.duration }}</td>
+                <td>
+                  <a href="javascript:void(0)" class="delete-date" data-id="{{ item.id }}">Delete</a>
+                </td>
+                <td class="text-danger">{{ item.status }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3"></script>
+<script>
+  // moment.tz.setDefault("America/New_York");
+  var todayDate = moment().format('YYYY-MM-DD');
+  var currentTime = moment().format('hh.mm');
+
+  $('.datepicker').datepicker({
+    language: "es",
+    autoclose: true,
+    format: "yyyy-mm-dd",
+    beforeShowDay: function(date) {
+      var specificDates = {{selected_dates|safe}};
+      var dateString = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
+      if (specificDates.includes(dateString)) {
+        return {
+          classes: 'date-enabled'
+        };
+      } else {
+        return {
+          enabled: false
+        };
+      }
+    }
+  });
+
+  $('#timePicker').timepicker({
+    format: 'hh:MM TT',
+    uiLibrary: 'bootstrap4',
+    useCurrent: false,
+    value: moment().format('hh:mm A'),
+  });
+
+  $("#increaseHour").click(function() {
+    adjustHour(30, 'add');
+  });
+
+  $("#decreaseHour").click(function() {
+      adjustHour(-30, 'minus');
+  });
+
+  $(document).on('click', '.delete-date', function() {
+    var id = $(this).data('id');
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You won\'t be able to revert this!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        var csrftoken = Cookies.get('csrftoken');
+        $.ajax({
+          type: 'POST',
+          url: '/bookings/delete/' + id,
+          data: {
+            csrfmiddlewaretoken: csrftoken
+          },
+          success: function(response) {
+            location.reload();
+          }
+        });
+      }
+    });
+});
+
+  new DataTable('#example', {
+    responsive: true,
+    "bFilter": false,
+    "bLengthChange": false,
+    "ordering": false
+  });
+
+  var validator = $("#booking-form").validate({
+    rules: {
+      date: {
+        required: true,
+        date: true
+      },
+      start_time: {
+        required: true
+      }
+    },
+    messages: {
+      date: {
+        required: "Please select a date",
+      },
+      start_time: {
+        required: "Please enter a start time"
+      }
+    },
+    submitHandler: function(form) {
+      var data_exists = false;
+      var booking_form = $("#booking-form");
+
+      $('#booking-form button[type="submit"]').html('<i class="fa fa-spinner fa-spin"></i> Loading...').prop('disabled', true);
+      $.ajax({
+        url: '/check_availability',
+        type: "POST",
+        async: false,
+        data: booking_form.serialize(),
+        dataType: 'json',
+        success: function (data) {
+          if (data) {
+            console.log('record exists', data.exists)
+            data_exists = data.exists
+          }        
+        }
+      });
+
+      $('#booking-form button[type="submit"]').html('Submit').prop('disabled', false);
+
+      if (data_exists) {
+        Swal.fire({
+          text: 'The selected time slot is not available.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return false
+      }
+      form.submit();
+    },
+    errorElement: 'div',
+    errorPlacement: function (error, element) {
+      error.addClass('invalid-feedback');
+      error.insertAfter(element.closest('.input-group'));
+    },
+    highlight: function (element, errorClass, validClass) {
+      $(element).addClass('is-invalid');
+    },
+    unhighlight: function (element, errorClass, validClass) {
+      $(element).removeClass('is-invalid');
+    }
+  });
+
+  function adjustHour(minutes, sign) {
+    var hourInput = $("#hourInput");
+    var currentValue = hourInput.val();
+    var currentHour = parseInt(currentValue.split(":")[0]);
+    var currentMinute = parseInt(currentValue.split(":")[1]);
+
+    var newHour = currentHour;
+    var newMinute = currentMinute + minutes;
+
+    if (sign == 'add' && parseInt(currentHour) >= 4)
+      return false
+
+    if (newMinute >= 60) {
+      newHour += Math.floor(newMinute / 60);
+      newMinute %= 60;
+    } else if (newMinute < 0) {
+      newHour -= Math.ceil(Math.abs(newMinute) / 60);
+      newMinute = 60 - Math.abs(newMinute) % 60;
+    }
+
+    if (newHour == 0)
+      return false   
+
+    newHour = (newHour < 10 ? "0" : "") + newHour;
+    newMinute = (newMinute < 10 ? "0" : "") + newMinute;
+
+    hourInput.val(newHour + ":" + newMinute);
+    $("#hourNumber").html(parseInt(newHour))
+
+    if (newHour >=1 && newMinute > 0) {
+      $("#minsNumber span").html(parseInt(newMinute)).show();
+      $("#minsNumber").show()
+    } else {
+      $("#minsNumber").hide()
+    }
+  }
+</script>
+{% endblock %}

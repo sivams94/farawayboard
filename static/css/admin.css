@@ -1,0 +1,63 @@
+.date-enabled {
+	background-color: #c6e48b;
+	color: #000;
+}
+.custom_datepicker .datepicker-inline {
+	width: auto;
+}
+.datepicker .datepicker-switch, .datepicker .next, .datepicker .prev, .datepicker tfoot tr th {
+	font-size: 20px;
+}
+.custom_datepicker table {
+	border-collapse: separate;
+  border-spacing: 1em;
+	font-size: 20px;
+	width: 30%;
+}
+.custom_datepicker table tr, .custom_datepicker table th {
+	background-color: transparent;
+}
+.custom_datepicker table tr td, .custom_datepicker table tr th
+{
+	width: auto;
+	height: auto
+}
+.list_selected_dates {
+	padding: 0;
+	list-style: none;
+	width: 50%;
+}
+.list_selected_dates li {
+	list-style: none;
+	padding: 6px 0;
+}
+.list_selected_dates li a.delete_date {
+	float: right;
+	color: #721c24;
+	background-color: #f8d7da;
+	border-color: #f5c6cb;
+	padding: 0 6px;
+	cursor: pointer;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+.column {
+  float: left;
+  width: 40%;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+@media screen and (max-width: 600px) {
+  .column {
+    width: 100%;
+  }
+}

@@ -1,0 +1,107 @@
+{% extends 'admin/change_list.html' %}
+{% load static %}
+{% block title %}Set Date Availability{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="column">
+    <form method="post">
+      {% csrf_token %}
+      <div class="custom_datepicker">
+        <div id="datepicker_inline"></div>
+      </div>
+      <input type="hidden" id="selectedDatesInput" name="selectedDates">
+      <input type="submit" value="Save" />
+    </form>
+  </div>
+  <div class="column">
+    <h2>Selected Dates</h2>
+    <ul class="list_selected_dates">
+      {% for item in dates %}
+        <li data-id="{{ item.id }}">{{ item.selected_date|date:"d M Y" }} <a class="delete_date" data-id="{{ item.id }}" data-date="{{ item.selected_date|date:"Y-m-d" }}">delete</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+<script src="{% static 'admin/js/jquery.js' %}"></script>
+<script>
+  window.addEventListener("load", function() {
+    (function($) {
+      {% comment %} moment.tz.setDefault(moment.tz.guess());
+      var todayDate = moment().format('YYYY-MM-DD');
+      var currentTime = moment().format('hh.mm'); {% endcomment %}
+      var existingDates = {{selected_dates|safe}}
+
+      initializeDatepicker();
+
+      $('.delete_date').click(function() {
+        if (confirm("Are you sure you want to delete?")) {
+          var date_id = $(this).attr("data-id")
+          var date_date = $(this).attr("data-date")
+
+          $(this).html('Deleting...')
+
+          $.ajax({
+            url: '/delete_date/',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+              id: date_id,
+              csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+              existingDates = removeExistingDate(existingDates, date_date)
+              rerenderDatepicker();
+              $('.list_selected_dates li[data-id="' + date_id + '"]').remove();
+            },
+            error: function(xhr, status, error) {
+              console.error('AJAX request failed with status:', status, 'and error:', error);
+            }
+          });
+        }
+      })
+
+      function initializeDatepicker() {    
+        $('#datepicker_inline').datepicker({
+          todayHighlight: true,
+          autoclose: true,
+          inline: true,
+          multidate: true,
+          multidateSeparator: ',',
+          beforeShowDay: function(date) {
+            var specificDates = existingDates;
+            var dateString = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
+            if (specificDates.includes(dateString)) {
+              return {
+                classes: 'date-enabled'
+              };
+            }
+          }
+        }).on('changeDate', function(e) {
+          selectedDates = e.dates.map(function(date) {
+            return moment(date).format('YYYY-MM-DD');
+          });
+    
+          $('#selectedDatesInput').val(selectedDates.join(',')); 
+        });
+      }
+
+      function rerenderDatepicker() {
+        $('#datepicker_inline').datepicker('destroy');
+        initializeDatepicker();
+      }
+
+      function removeExistingDate(existingDates, removeDate) {    
+        var index = existingDates.indexOf(removeDate);
+    
+        console.log(existingDates, index, removeDate)
+        if (index !== -1) {
+          existingDates.splice(index, 1);
+        }
+    
+        return existingDates.join(',');
+      }
+    })(django.jQuery);
+  });
+</script>
+{% endblock %}

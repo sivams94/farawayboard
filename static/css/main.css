@@ -1,0 +1,81 @@
+.bg-purple {
+	background-color: var(--purple);
+}
+
+.box-shadow {
+	box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, .05);
+}
+
+.jumbotron {
+	width: 100%;
+	height: 10vh;
+	overflow: hidden;
+	position: relative;
+	background: url(https://bootstrapmade.com/demo/templates/Anyar/assets/img/cta-bg.jpg) fixed center center;
+	background-size: cover;
+	position: relative;
+	margin-bottom: -45px;
+	z-index: 99;
+	transition: 0.3s;
+	border-radius: 0;
+}
+
+.jumbotron:before {
+	content: "";
+	background: rgba(6, 101, 183, 0.9);
+	position: absolute;
+	bottom: 0;
+	top: 0;
+	left: 0;
+	right: 0;
+}
+
+.name-tag {
+	width: 80px;
+	height: 80px;
+	position: absolute;
+	top: -40px;
+	left: 0;
+	right: 0;
+	margin: 0 auto;
+	border-radius: 50%;
+}
+
+.name-tag div {
+	position: relative;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 3rem;
+}
+
+.loggedin-name {
+	margin-top: 40px
+}
+
+.load-contents {
+	padding-top: 0;
+	position: relative;
+	z-index: 100;
+}
+
+.underlined-header {
+	display: inline-block;
+	position: relative;
+}
+.underlined-header::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: -3px; /* Adjust this value to control the space between text and underline */
+	width: 100%;
+	height: 2px;
+	background-color: #0568b7;
+}
+.date-enabled {
+	background-color: #c6e48b !important;
+	color: #000 !important;
+}
+.datepicker-days table {
+	border-collapse: separate;
+  border-spacing: 0.5em;
+}

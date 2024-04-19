@@ -1,0 +1,40 @@
+{% extends 'auth.html' %}
+{% load crispy_forms_tags %}
+{% crispy form form.helper %}
+{% load i18n %}
+
+{% block content %}
+<section class="h-100">
+  <div class="container h-100">
+    <div class="row justify-content-md-center h-100">
+      <div class="card-wrapper">
+        <div class="brand invisible">
+        </div>
+        <div class="card fat">
+          <div class="card-body">
+            <h4 class="card-title text-center">Register</h4>
+            {% for message in messages %}
+              <div class="alert {{ message.tags }} alert-dismissible shadow fade show" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+                {{ message | safe }}
+              </div>
+            {% endfor %}
+            <form method="POST" class="register-validation" novalidate="">
+              {% csrf_token %}
+              {{ form|crispy}}
+              <div class="form-group m-0">
+                <button type="submit" class="btn btn-primary btn-block">Register</button>
+              </div>
+              <div class="mt-4 text-center">
+                Already have an account? <a href="{% url 'login' %}">Login</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
