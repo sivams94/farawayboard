@@ -1,0 +1,56 @@
+{% extends 'main.html' %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="row align-items-start justify-content-around">
+  <div class="col-md-3 my-3 p-4 bg-white rounded box-shadow text-center">
+    <div class="name-tag bg-warning">
+      <div class="font-weight-bold text-white">{{ name }}</div>
+    </div>
+    <p class="font-weight-bold loggedin-name">Hi, {{ request.user.full_name }}</p>
+    <p>
+      <span class="d-block">Last sign-in</span>
+      <span class="text-primary">{{ request.user.last_login }}</span>
+    </p>
+    <form class="form-inline my-2 my-lg-0" method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button class="btn btn-dark btn-block my-2 my-sm-0" type="submit">Log Out</button>
+    </form>
+  </div>
+  <div class="col-md-8">
+    <div class="row my-3 p-3 bg-white rounded box-shadow">
+      <div class="col-md-12">
+        <h2 class="mb-4">Confirm Booking</h2>
+        <table class="table table-bordered">
+          <tbody>
+            <tr>
+              <th scope="row">Date</th>
+              <td>{{ form_data.date|date:'d M Y' }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Start Time</th>
+              <td>{{ form_data.start_time  }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Duration</th>
+              <td>{{ form_data.duration }} Mins</td>
+            </tr>
+          </tbody>
+        </table>   
+        
+        <div class="container p-0">
+          <form action={% url 'checkout' %} method="post">
+            {% csrf_token %}
+            <button class="btn btn-primary float-right" type="submit">Confirm</button>
+          </form>
+          <form action={% url 'booking_cancel' %} method="post">
+            {% csrf_token %}
+            <button class="btn btn-default float-left" type="submit">Cancel</button>
+          </form>
+        </div> 
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

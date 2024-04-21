@@ -27,7 +27,7 @@ def index(request):
         'duration': request.POST['duration']
       }
       request.session['booking_form_data'] = form_data
-      return redirect('checkout')
+      return redirect('confirm')
 
     my_bookings = Order.objects.filter(
       end_date__gte=datetime.now(),
@@ -47,6 +47,18 @@ def index(request):
       'bookings': my_bookings,
       'selected_dates': dates_array
     })
+
+def confirm(request):
+  form_data = request.session.get('booking_form_data')
+
+  return render(request, 'booking/confirm.html', {
+    'pageTitle': 'Confirm Booking',
+    'form_data': {
+      'date': datetime.strptime(form_data.get("date"), "%Y-%m-%d"),
+      'start_time': datetime.strptime(form_data.get("start_time"), '%H:%M').strftime('%I:%M %p'),
+      'duration': form_data.get("duration")
+    }
+  })
 
 def checkout(request):
   form_data = request.session.get('booking_form_data')
@@ -71,8 +83,12 @@ def checkout(request):
       except Coupon.DoesNotExist:
         error_message = "Invalid coupon code."
   return render(request, 'booking/checkout.html', {
-    'pageTitle': 'Confirm Booking',
-    'form_data': form_data,
+    'pageTitle': 'Checkout',
+    'form_data': {
+      'date': datetime.strptime(form_data.get("date"), "%Y-%m-%d"),
+      'start_time': datetime.strptime(form_data.get("start_time"), '%H:%M').strftime('%I:%M %p'),
+      'duration': form_data.get("duration")
+    },
     'coupon_form': coupon_form,
     'valid_coupon_code': valid_coupon_code,
     'error_message': error_message,
@@ -82,13 +98,13 @@ def checkout(request):
 def booking_confirm(request):
   if request.method == 'POST':
     form_data = request.session.get('booking_form_data')
-    split_hours_minutes = form_data.get("duration").split(':')
+    duration = form_data.get("duration")
     valid_coupon_code = request.session.get('coupon_code')
 
     # Combine date and time into a single datetime object
-    combined_startdatetime = datetime.combine(datetime.strptime(form_data.get("date"), '%Y-%m-%d').date(), datetime.strptime(form_data.get("start_time"), "%I:%M %p").time())
+    combined_startdatetime = datetime.combine(datetime.strptime(form_data.get("date"), '%Y-%m-%d').date(), datetime.strptime(form_data.get("start_time"), "%H:%M").time())
     start_datetime = combined_startdatetime
-    end_datetime = combined_startdatetime + timedelta(hours=int(split_hours_minutes[0]), minutes=int(split_hours_minutes[1]))
+    end_datetime = combined_startdatetime + timedelta(minutes=int(duration))
 
     model_instance = Order(
       start_date=start_datetime,

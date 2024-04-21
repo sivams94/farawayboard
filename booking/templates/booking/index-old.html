@@ -34,15 +34,9 @@
           {% csrf_token %}
           <input type="hidden" name="device_id" value="1">
           <h4 class="pb-2 mb-4 underlined-header">Book Now</h4>
-          <div class="form-group">
-            <p>Schedule a &nbsp;
-              <label class="btn btn-danger mr-2 mb-0 cursor-pointer"><input class="" type="radio" name="duration" value="30" data-next-input="date-input"> 30 Mins</label>
-              <label class="btn btn-danger mb-0 cursor-pointer"><input class="" type="radio" name="duration" value="60" data-next-input="date-input"> 60 Mins</label>
-              &nbsp; slot in next 14 days.
-            </p>
-          </div>
-          <div id="date-input" class="form-group" style="display: none">
-            <div class="col-sm-7 p-0">              
+          <div class="form-group row">
+            <label for="inputPassword" class="col-sm-3 col-form-label">Date</label>
+            <div class="col-sm-9">              
               <div class="datepicker date input-group">
                 <input type="text" name="date" class="form-control" placeholder="Choose Date" required autocomplete="off">
                 <div class="input-group-append">
@@ -51,14 +45,36 @@
               </div>
             </div>
           </div>
-          <div id="time-input" class="form-group" style="display: none">
-            <div class="col-sm-7 p-0">
-              <select class="form-control" id="time-slot" name="start_time"></select>
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Start Time</label>
+            <div class="col-sm-9">
+              <input type="text" name="start_time" class="form-control" id="timePicker" required>
             </div>
           </div>
-          <div id="form-submit" class="form-group row mt-4" style="display: none">
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Duration</label>
             <div class="col-sm-9">
-              <button class="btn btn-primary" type="submit">Submit</button>
+              <div class="row">
+                <div class="col-md-3">
+                  <button class="btn btn-primary" type="button" id="decreaseHour">-</button>
+                </div>
+                <div class="col-md-6 text-center p-2">
+                  <input type="hidden" name="duration" class="form-control" id="hourInput" value="01:00">
+                  <div class="font-weight-bold">
+                    <span id="hourNumber">1</span> Hr
+                    <span id="minsNumber" style="display: none"><span></span> Mins</span> 
+                  </div>
+                </div>
+                <div class="col-md-3 text-right">
+                  <button class="btn btn-primary" type="button" id="increaseHour">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group row mt-4">
+            <label class="col-sm-3 col-form-label"></label>
+            <div class="col-sm-9">
+              <button class="btn btn-primary btn-block" type="submit">Submit</button>
             </div>
           </div>
 
@@ -86,7 +102,7 @@
                 <td>{{ item.start_date|date:'d M Y' }}</td>
                 <td>{{ item.start_date|date:'h:i a' }}</td>
                 <td>{{ item.end_date|date:'h:i a' }}</td>
-                <td>{{ item.duration }} Mins</td>
+                <td>{{ item.duration }}</td>
                 <td>
                   <a href="javascript:void(0)" class="delete-date" data-id="{{ item.id }}">Delete</a>
                 </td>
@@ -99,16 +115,11 @@
     </div>
   </div>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3"></script>
 <script>
   // moment.tz.setDefault("America/New_York");
   var todayDate = moment().format('YYYY-MM-DD');
   var currentTime = moment().format('hh.mm');
-
-  $('input[type=radio][name=duration]').change(function() {
-    $('#' + $(this).data("next-input")).show();
-    generate_time_slot(parseInt($(this).val()))
-  });
 
   $('.datepicker').datepicker({
     language: "es",
@@ -129,15 +140,6 @@
     }
   });
 
-  $('.datepicker').on('changeDate', function() {
-    generate_time_slot(parseInt($('input[name="duration"]:checked').val()))
-    $('#time-input').show();
-  });
-
-  $('#time-slot').change(function() {
-    $('#form-submit').show();
-  })
-
   $('#timePicker').timepicker({
     format: 'hh:MM TT',
     uiLibrary: 'bootstrap4',
@@ -150,7 +152,7 @@
   });
 
   $("#decreaseHour").click(function() {
-    adjustHour(-30, 'minus');
+      adjustHour(-30, 'minus');
   });
 
   $(document).on('click', '.delete-date', function() {
@@ -189,9 +191,6 @@
 
   var validator = $("#booking-form").validate({
     rules: {
-      duration: {
-        required: true
-      },
       date: {
         required: true,
         date: true
@@ -201,9 +200,6 @@
       }
     },
     messages: {
-      duration: {
-        required: "Please select the duration",
-      },
       date: {
         required: "Please select a date",
       },
@@ -242,12 +238,16 @@
       }
       form.submit();
     },
-    errorPlacement: function(error, element) {
-      if (element.attr("type") == "radio") {
-        error.appendTo(element.closest('.form-group'));
-      } else {
-        error.appendTo(element.closest('.form-group'));
-      }
+    errorElement: 'div',
+    errorPlacement: function (error, element) {
+      error.addClass('invalid-feedback');
+      error.insertAfter(element.closest('.input-group'));
+    },
+    highlight: function (element, errorClass, validClass) {
+      $(element).addClass('is-invalid');
+    },
+    unhighlight: function (element, errorClass, validClass) {
+      $(element).removeClass('is-invalid');
     }
   });
 
@@ -285,35 +285,6 @@
       $("#minsNumber").show()
     } else {
       $("#minsNumber").hide()
-    }
-  }
-
-  function generate_time_slot(interval) {
-    var select = $('#time-slot');
-    var startTime = new Date();
-    startTime.setHours(5, 30, 0, 0); // Set start time to 5:30 AM
-    var endTime = new Date();
-    endTime.setHours(22, 30, 0, 0); // Set end time to 10:30 PM
-    select.html('')
-
-    var currentTime = new Date(startTime);
-    select.append($('<option>', {
-      value: 0,
-      text: 'Select Time'
-    }));
-    while (currentTime <= endTime) {
-        var hours = currentTime.getHours();
-        var minutes = ('0' + currentTime.getMinutes()).slice(-2);
-        var ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12; // Convert 0 to 12 for AM/PM notation
-        var optionText = hours + ':' + minutes + ' ' + ampm;
-        var optionValue = ('0' + currentTime.getHours()).slice(-2) + ':' + ('0' + currentTime.getMinutes()).slice(-2);
-        select.append($('<option>', {
-            value: optionValue,
-            text: optionText
-        }));
-        currentTime.setMinutes(currentTime.getMinutes() + interval); // Increment time by 30 minutes
     }
   }
 </script>

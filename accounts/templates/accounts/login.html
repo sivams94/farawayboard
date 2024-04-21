@@ -24,6 +24,7 @@
             <form method="POST" class="login-validation" novalidate="">
               {% csrf_token %}
               {{ form|crispy}}
+              <a href="{% url 'password_reset' %}" class="float-right mb-3">Forgot password?</a>
               <div class="form-group m-0">
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
               </div>
