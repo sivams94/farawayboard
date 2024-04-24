@@ -72,6 +72,7 @@ TEMPLATES = [
         'django.template.context_processors.request',
         'django.contrib.auth.context_processors.auth',
         'django.contrib.messages.context_processors.messages',
+        'project.context_processors.menu_links',
       ],
     },
   },
@@ -167,7 +168,7 @@ EMAIL_HOST = 'smtp-relay.brevo.com'
 EMAIL_HOST_USER = 'paramasivammi7@gmail.com'
 EMAIL_HOST_PASSWORD = 'r5y4RbXtcjS7Pzw3'
 EMAIL_PORT = 587
-DEFAULT_FROM_EMAIL = 'paramasivammi7@gmail.com'
+DEFAULT_FROM_EMAIL = 'support@farawayboard.com'
 
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None

@@ -36,5 +36,5 @@ urlpatterns = [
 
   ##### accounts related path########################## 
   path('', include('booking.urls')),
-  path('booking/', booking_view.index, name ='booking'),
+  path('book-now/', booking_view.book_now, name ='book-now'),
 ]

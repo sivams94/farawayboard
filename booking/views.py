@@ -14,9 +14,12 @@ from .models import Order, AvailableDate, CancelledDate
 from .forms import CouponForm
 from coupons.models import Coupon
 from accounts.models import CustomUser
+from pytz import timezone as tz
+import pytz
+import datetime as DT
 
 @login_required(login_url='/login')
-def index(request):
+def book_now(request):
   if request.user.is_superuser:
     return redirect('/admin')
   else:
@@ -29,27 +32,20 @@ def index(request):
       request.session['booking_form_data'] = form_data
       return redirect('confirm')
 
-    my_bookings = Order.objects.filter(
-      end_date__gte=datetime.now(),
-      user_id=request.user.id
-    )
-
-    for booking in my_bookings:
-      if CancelledDate.objects.filter(cancelled_date=booking.start_date.strftime("%Y-%m-%d")).exists():
-        booking.status = 'Date cancelled'
-
     queryset = AvailableDate.objects.filter(selected_date__gte=timezone.localtime().strftime("%Y-%m-%d"))    
     dates_array = [item.selected_date.strftime("%Y-%m-%d") for item in queryset]
 
     return render(request, 'booking/index.html', {
       'pageTitle': 'Bookings',
       'name': request.user.full_name[0],
-      'bookings': my_bookings,
       'selected_dates': dates_array
     })
 
 def confirm(request):
   form_data = request.session.get('booking_form_data')
+
+  if not form_data:
+    return redirect("/book-now")
 
   return render(request, 'booking/confirm.html', {
     'pageTitle': 'Confirm Booking',
@@ -68,7 +64,7 @@ def checkout(request):
   success_message = None
 
   if not form_data:
-    return redirect("/booking")
+    return redirect("/book-now")
 
   if request.method == 'POST':
     if coupon_form.is_valid():
@@ -128,7 +124,7 @@ def booking_confirm(request):
 def booking_cancel(request):
   if request.method == 'POST':
     del request.session['booking_form_data']
-  return redirect("/booking")
+  return redirect("/book-now")
 
 def destroy(request, id):  
   booking = Order.objects.get(id=id)  
@@ -140,25 +136,62 @@ def check_availability(request):
   start_time = request.POST['start_time']
   duration = request.POST['duration']
 
-  split_hours_minutes = duration.split(':')
-
   # Add duration to start_time
-  start_time_obj = datetime.strptime(start_time, '%I:%M %p')
-  end_time_obj = start_time_obj + timedelta(hours=int(split_hours_minutes[0]), minutes=int(split_hours_minutes[1]))
-  end_time_str = datetime.strftime(end_time_obj, '%I:%M %p')
+  start_time_obj = datetime.strptime(start_time, '%H:%M')
+  end_time_obj = start_time_obj + timedelta(minutes=int(duration))
+  end_time_str = datetime.strftime(end_time_obj, '%H:%M')
 
-  start_datetime = datetime.strptime(date + ' ' + start_time, '%Y-%m-%d %H:%M %p')
-  end_datetime = datetime.strptime(date + ' ' + end_time_str, '%Y-%m-%d %H:%M %p')
+  start_datetime = datetime.strptime(date + ' ' + start_time, '%Y-%m-%d %H:%M')
+  end_datetime = datetime.strptime(date + ' ' + end_time_str, '%Y-%m-%d %H:%M')
 
   records_within_range = Order.objects.filter(
-    start_date__lte=end_datetime,
-    end_date__gte=start_datetime
+    start_date__lt=end_datetime,
+    end_date__gt=start_datetime
   )
 
   if records_within_range.exists():
     return JsonResponse({'exists':True})
   else:
     return JsonResponse({'exists':False})
+
+def check_booking_time(request):
+  date = request.POST['date']
+  start_time = request.POST['start_time']
+  duration = request.POST['duration']
+
+  est_timezone = pytz.timezone('America/New_York')
+  start_datetime = DT.datetime.strptime(f"{date} {start_time}", '%Y-%m-%d %H:%M')
+  
+  current_datetime_utc = timezone.now()  
+  current_datetime_est = current_datetime_utc.astimezone(est_timezone)
+
+  form_datetime_est = est_timezone.localize(start_datetime)
+
+  if current_datetime_est > form_datetime_est:
+    return JsonResponse({'time':False})
+  else:
+    return JsonResponse({'time':True})
+
+def my_bookings(request):
+  if request.user.is_superuser:
+    return redirect('/admin')
+  else:
+    my_bookings = Order.objects.filter(
+      end_date__gte=datetime.now(),
+      user_id=request.user.id
+    )
+
+    for booking in my_bookings:
+      if CancelledDate.objects.filter(cancelled_date=booking.start_date.strftime("%Y-%m-%d")).exists():
+        booking.status = 'Date cancelled'
+
+    queryset = AvailableDate.objects.filter(selected_date__gte=timezone.localtime().strftime("%Y-%m-%d"))
+
+    return render(request, 'booking/my_bookings.html', {
+      'pageTitle': 'Bookings',
+      'name': request.user.full_name[0],
+      'bookings': my_bookings
+    })
 
 def delete_date(request):
   id = request.POST.get('id')

@@ -14,7 +14,7 @@ from .token import account_activation_token
 
 def index(request):
   if request.user.is_authenticated:
-    return redirect('booking')
+    return redirect('book-now')
   else:
     return redirect('login')
 
